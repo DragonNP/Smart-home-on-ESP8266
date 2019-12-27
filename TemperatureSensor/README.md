@@ -1,3 +1,4 @@
+![PROJECT_PHOTO](https://github.com/DragonNP/Smart-home-on-ESP8266/blob/master/TemperatureSensor/schemes/scheme.png)
 # Temperature sensor for smart home
 * [Project description](#chapter-0)
 * [Project folder](#chapter-1)
@@ -15,9 +16,9 @@ I present you the first module - the Temperature Sensor! The temperature can be 
 
 <a id="chapter-2"></a>
 ## Settings in the code
-	BLYNK_PRINT Serial        // Comment this out to disable prints and save space
-	INTERVAL_TIMER 1000       // Set the time (in milliseconds) to poll the temperature sensor
-	BLYNK_TOKEN "token"  // Blynk token
+	BLYNK_PRINT Serial        	// Comment this out to disable prints and save space
+	INTERVAL_TIMER 1000       	// Set the time (in milliseconds) to poll the temperature sensor
+	BLYNK_TOKEN "token"  		// Blynk token
 
 	// -------- WiFi Manager ---------
 	AC_SSID "Temperature sensor"
