@@ -8,6 +8,9 @@
 /*
   Version 1.1
   - Created project
+
+  Version 1.2
+  - Added reset button
 */
 
 // ============ SETTINGS ============
@@ -16,12 +19,13 @@
 #define BLYNK_TOKEN "token"       // Blynk token
 
 // -------- WiFi Manager ---------
-#define AC_SSID "Temperature sensor"
+#define AC_SSID "Temperature Sensor"
 #define AC_PASS ""
 
 // ------------ PINS -------------
 #define TEMP_SENSOR_INPUT_PIN 2   // Pin on which the temperature sensor is installed
 #define TEMP_SENSOR_OUTPUT_PIN V1 // The temperature is sent to this pin
+#define BUTTON_INPUT_PIN 0        // Reset button pin
 // =========== SETTINGS ===========
 
 
@@ -43,7 +47,7 @@ GTimer tempTimer(MS);
 
 void setup() {
   Serial.begin(115200);
-
+  
   // Init WiFi Manager
   WiFiManager wifiManager;
   wifiManager.setDebugOutput(false);
@@ -51,8 +55,18 @@ void setup() {
   wifiManager.addParameter(&custom_blynk_token);
   wifiManager.autoConnect(AC_SSID, AC_PASS);
 
+  // Reset 
+  pinMode(BUTTON_INPUT_PIN, INPUT);
+  if (digitalRead(BUTTON_INPUT_PIN)) {
+    wifiManager.resetSettings();
+    ESP.reset();
+    delay(2000);
+  }
+
+  // Init Blynk
   Blynk.config(custom_blynk_token.getValue());
 
+  // Init timer
   tempTimer.setInterval(INTERVAL_TIMER);
   tempTimer.start();
 }
