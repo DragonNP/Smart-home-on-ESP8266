@@ -1,5 +1,5 @@
 # Temperature sensor for smart home
-* [Project descriptionа](#chapter-0)
+* [Project description](#chapter-0)
 * [Project folder](#chapter-1)
 * [Settings in the code](#chapter-2)
 
