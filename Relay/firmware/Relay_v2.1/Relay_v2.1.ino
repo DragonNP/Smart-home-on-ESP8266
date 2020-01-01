@@ -1,6 +1,6 @@
 /*
   Sketch for the project "Relay"
-  The source code on GitHub: 
+  The source code on GitHub:  https://github.com/DragonNP/Smart-home-on-ESP8266/tree/master/Relay
   Author: DragonNP, 2019
   https://github.com/DragonNP/
 */
@@ -14,24 +14,27 @@
 
   Version 2.0
   - Added management via OpenHab (MQTT Broker)
+
+  Version 2.1
+  - Small change
 */
 
 // ============ SETTINGS ============
+#define isDebug true
+
 // -------- WiFi Manager ---------
 #define AC_SSID "Relay"
 #define AC_PASS ""
 
 // ------------ PINS -------------
-#define BUTTON_PIN V2   // Pin button for on/off relay
-#define RELAY_PIN 2     // Pin relay
+#define RELAY_PIN 2                 // Pin relay
 
 // --------- MQTT SERVER ---------
 const char *mqtt_server = "server"; // Server name MQTT
 const int mqtt_port = 1883;         // Port for connecting to the MQTT server
 const char *mqtt_user = "login";    // Login from the server
 const char *mqtt_pass = "passwd";   // The password from the server
-#define TOPIK_OUT "/topik/out"
-#define TOPIK_IN "/topik/in"
+#define TOPIK "topik"
 // =========== SETTINGS ===========
 
 
@@ -47,47 +50,56 @@ const char *mqtt_pass = "passwd";   // The password from the server
 WiFiManager wifiManager;
 WiFiClient espClient;
 PubSubClient client(espClient, mqtt_server, mqtt_port);
-String stateRelay;
+int stateRelay;
 
 void setup() {
+#if isDebug
   Serial.begin(115200);
+#endif
 
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, HIGH);
-  stateRelay = "ON";
+  stateRelay = HIGH;
   
   // Init WiFi Manager
+#if !isDebug
   wifiManager.setDebugOutput(false);
+#endif
   wifiManager.autoConnect(AC_SSID, AC_PASS);
 }
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED && !client.connected()) {
+#if isDebug
       Serial.println("Connecting to MQTT server");
-      
-      if (client.connect(MQTT::Connect("arduinoClient2").set_auth(mqtt_user, mqtt_pass))) {
+#endif
+
+      if (client.connect(MQTT::Connect(AC_SSID).set_auth(mqtt_user, mqtt_pass))) {
+#if isDebug
         Serial.println("Connected to MQTT server");
+#endif
+        client.publish(TOPIK, String(stateRelay));
         client.set_callback(callback);
-        client.subscribe(TOPIK_IN);
-        client.publish(TOPIK_OUT, String(stateRelay));
-      }else
+        client.subscribe(TOPIK);
+      }
+      else {
+#if isDebug
         Serial.println("Could not connect to MQTT server"); 
+#endif
+      }
   }
   
   if (client.connected())
     client.loop();
 }
 
-void callback(const MQTT::Publish& pub) {  
-  if(String(pub.topic()) == TOPIK_IN) {
-    stateRelay = pub.payload_string();
-    Serial.println(pub.payload_string());
-    
-    if(stateRelay == "ON") 
-      digitalWrite(RELAY_PIN, HIGH);
-    else
-      digitalWrite(RELAY_PIN, LOW);
-      
-    client.publish(TOPIK_OUT, stateRelay);
-  }
+void callback(const MQTT::Publish& pub) {
+#if isDebug
+  Serial.print(String(pub.topic()));
+  Serial.print(" ==> ");
+  Serial.println(pub.payload_string());
+#endif
+  
+  stateRelay = pub.payload_string().toInt();
+  digitalWrite(RELAY_PIN, stateRelay);
 }
