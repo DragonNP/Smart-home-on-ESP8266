@@ -16,14 +16,18 @@ With this module, you can assemble a socket or lamp, for example
 
 <a id="chapter-2"></a>
 ## Settings in the code
-	BLYNK_PRINT Serial        // Comment this out to disable prints and save space
-	BLYNK_TOKEN "token"       // Blynk token
+	isDebug true
 
 	// -------- WiFi Manager ---------
-	AC_SSID "Rele"
+	AC_SSID "Relay"
 	AC_PASS ""
 
 	// ------------ PINS -------------
-	BUTTON_PIN V2   // Pin button for on/off relay
-	RELAY_PIN 2     // Pin relay
-	
+	RELAY_PIN 2                 	   // Pin relay
+
+	// --------- MQTT SERVER ---------
+	const char *mqtt_server = "server"; // Server name MQTT
+	const int mqtt_port = 1883;         // Port for connecting to the MQTT server
+	const char *mqtt_user = "login";    // Login from the server
+	const char *mqtt_pass = "passwd";   // The password from the server
+	TOPIK "topik"
