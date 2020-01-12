@@ -1,6 +1,6 @@
 /*
   Sketch for the project "DHT Sensor"
-  The source code on GitHub:
+  The source code on GitHub: https://github.com/DragonNP/Smart-home-on-ESP8266/tree/master/DHT_Sensor
   Author: DragonNP, 2020
   https://github.com/DragonNP/
 
