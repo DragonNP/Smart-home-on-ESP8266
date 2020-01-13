@@ -20,7 +20,6 @@
 #define SPEED_SERIAL 115200
 
 // ------------- DHT ------------
-#define DHT_SEND_TIME 5000
 #define DHT_PIN    2
 #define DHT_TYPE   DHT11     // DHT 11
 //#define DHT_TYPE DHT22     // DHT 22 (AM2302)
@@ -35,6 +34,7 @@
 #define LENGHT_MQTT_PORT           6
 #define LENGHT_MQTT_USER           20
 #define LENGHT_MQTT_PASS           20
+#define LENGHT_SEND_TIME           6
 #define LENGHT_TOPIC_TEMPERATURE   40
 #define LENGHT_TOPIC_HUMIDITY      40
 
@@ -42,7 +42,8 @@
 #define START_ADDRESS_MQTT_PORT           LENGHT_MQTT_SERVER + 2
 #define START_ADDRESS_MQTT_USER           START_ADDRESS_MQTT_PORT + LENGHT_MQTT_PORT + 2
 #define START_ADDRESS_MQTT_PASS           START_ADDRESS_MQTT_USER + LENGHT_MQTT_USER + 2
-#define START_ADDRESS_TOPIC_TEMPERATURE   START_ADDRESS_MQTT_PASS + LENGHT_MQTT_PASS + 2
+#define START_ADDRESS_SEND_TIME           START_ADDRESS_MQTT_PASS + LENGHT_MQTT_PASS + 2
+#define START_ADDRESS_TOPIC_TEMPERATURE   START_ADDRESS_SEND_TIME + LENGHT_SEND_TIME + 2
 #define START_ADDRESS_TOPIC_HUMIDITY      START_ADDRESS_TOPIC_TEMPERATURE + LENGHT_TOPIC_TEMPERATURE + 2
 #define EEPROM_LENGTH                     START_ADDRESS_TOPIC_HUMIDITY + LENGHT_TOPIC_HUMIDITY
 // ===================== SETTINGS ================
@@ -66,10 +67,12 @@ ESP8266WebServer server(80);
 WiFiClient       espClient;
 PubSubClient     client(espClient);
 GTimer           timer(MS);
+GTimer           timerConnect(MS);
 String           MQTT_SERVER;
 int              MQTT_PORT;
 String           MQTT_USER;
 String           MQTT_PASS;
+int              SEND_TIME;
 String           TOPIC_TEMPERATURE;
 String           TOPIC_HUMIDITY;
 bool             shouldSaveConfig;              //flag for saving data
@@ -86,90 +89,25 @@ void setup() {
   beginEEPROM(EEPROM_LENGTH);
   delay(50);
   readConfig();
-  wifiInitServer(AC_SSID);
   wifiManagerInit();
   if (shouldSaveConfig) saveConfig();
   dht.begin();
   timerInit();
-  wifiStartServer(saveConfigFromArgs, clearEEPROM, dhtParam());
+  wifiStartServer(saveConfigFromArgs, clearEEPROM, AC_SSID, getParamsSettings(), getParamsDHT());
 }
 
 void loop() {
   wifiHandleClient();
-  if (!client.connected()) {
-    return reconnect();
+  if (!client.connected() && timerConnect.isReady())
+    reconnect();
+  else if (!client.connected() && !timerConnect.isEnabled()) {
+    timerConnect.setInterval(500);
+    timerConnect.start();
   }
-  client.loop();
-  if (timer.isReady()) sendTemperature();
-}
-
-void saveConfigCallback() {
-  Serial.println("Should save config");
-  shouldSaveConfig = true;
-}
-
-void readConfig() {
-  Serial.print(F("Reading config..."));
-  MQTT_SERVER = getEEPROMData(START_ADDRESS_MQTT_SERVER);
-  MQTT_PORT = getEEPROMData(START_ADDRESS_MQTT_PORT).toInt();
-  MQTT_USER = getEEPROMData(START_ADDRESS_MQTT_USER);
-  MQTT_PASS = getEEPROMData(START_ADDRESS_MQTT_PASS);
-  TOPIC_TEMPERATURE = getEEPROMData(START_ADDRESS_TOPIC_TEMPERATURE);
-  TOPIC_HUMIDITY = getEEPROMData(START_ADDRESS_TOPIC_HUMIDITY);
-  Serial.print(F("Readed! "));
-
-  printVars("MQTT_SERVER", MQTT_SERVER);
-  printVars("MQTT_PORT", String(MQTT_PORT));
-  printVars("MQTT_USER", MQTT_USER);
-  printVars("MQTT_PASS", MQTT_PASS);
-  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
-  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
-  Serial.println();
-}
-
-void saveConfig() {
-  Serial.print(F("Saving config..."));
-  saveDataInEEPROM(START_ADDRESS_MQTT_SERVER, MQTT_SERVER.c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_PORT, String(MQTT_PORT).c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_USER, MQTT_USER.c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_PASS, MQTT_PASS.c_str());
-  saveDataInEEPROM(START_ADDRESS_TOPIC_TEMPERATURE, TOPIC_TEMPERATURE.c_str());
-  saveDataInEEPROM(START_ADDRESS_TOPIC_HUMIDITY, TOPIC_HUMIDITY.c_str());
-  Serial.print(F("Saved! "));
-
-  printVars("MQTT_SERVER", MQTT_SERVER);
-  printVars("MQTT_PORT", String(MQTT_PORT));
-  printVars("MQTT_USER", MQTT_USER);
-  printVars("MQTT_PASS", MQTT_PASS);
-  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
-  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
-  Serial.println();
-}
-
-void saveConfigFromArgs() {
-  MQTT_SERVER = server.arg("server");
-  MQTT_PORT = server.arg("port").toInt();
-  MQTT_USER = server.arg("user");
-  MQTT_PASS = server.arg("pass");
-  TOPIC_TEMPERATURE = server.arg("topic_temp");
-  TOPIC_HUMIDITY = server.arg("topic_hum");
-  
-  Serial.print(F("Saving config..."));
-  saveDataInEEPROM(START_ADDRESS_MQTT_SERVER, MQTT_SERVER.c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_PORT, String(MQTT_PORT).c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_USER, MQTT_USER.c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_PASS, MQTT_PASS.c_str());
-  saveDataInEEPROM(START_ADDRESS_TOPIC_TEMPERATURE, TOPIC_TEMPERATURE.c_str());
-  saveDataInEEPROM(START_ADDRESS_TOPIC_HUMIDITY, TOPIC_HUMIDITY.c_str());
-  Serial.print(F("Saved! "));
-
-  printVars("MQTT_SERVER", MQTT_SERVER);
-  printVars("MQTT_PORT", String(MQTT_PORT));
-  printVars("MQTT_USER", MQTT_USER);
-  printVars("MQTT_PASS", MQTT_PASS);
-  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
-  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
-  Serial.println();
+  else if (client.connected()) {
+    client.loop();
+    if (timer.isReady()) sendTemperature();
+  }
 }
 
 void reconnect() {
@@ -179,9 +117,10 @@ void reconnect() {
   client.set_server(MQTT_SERVER, MQTT_PORT);
   if (client.connect(MQTT::Connect(AC_SSID).set_auth(MQTT_USER, MQTT_PASS))) {
     Serial.println(F("connected"));
+    timerConnect.stop();
   } else {
     Serial.println(F("failed"));
-    delay(1000);
+    timerConnect.setInterval(5000);
   }
 }
 
@@ -222,6 +161,7 @@ void wifiManagerInit() {
   WiFiManagerParameter custom_mqtt_port   = wifiAddParameter("port", "mqtt port", String(MQTT_PORT).c_str(), LENGHT_MQTT_PORT);
   WiFiManagerParameter custom_mqtt_user   = wifiAddParameter("user", "mqtt user", MQTT_USER.c_str(), LENGHT_MQTT_USER);
   WiFiManagerParameter custom_mqtt_pass   = wifiAddParameter("pass", "mqtt pass", MQTT_PASS.c_str(), LENGHT_MQTT_PASS);
+  WiFiManagerParameter custom_send_time   = wifiAddParameter("time", "send time", String(SEND_TIME).c_str(), LENGHT_SEND_TIME);
   WiFiManagerParameter custom_space2      = wifiAddParameter("<p></p>");
   WiFiManagerParameter custom_text2       = wifiAddParameter("<span>Topiсs:</span>");
   WiFiManagerParameter custom_topic_temp  = wifiAddParameter("topic_temp", "temperature topic", TOPIC_TEMPERATURE.c_str(), LENGHT_TOPIC_TEMPERATURE);
@@ -235,17 +175,112 @@ void wifiManagerInit() {
   MQTT_PORT = atoi(custom_mqtt_port.getValue());
   MQTT_USER = custom_mqtt_user.getValue();
   MQTT_PASS = custom_mqtt_pass.getValue();
+  SEND_TIME = atoi(custom_send_time.getValue());
   TOPIC_TEMPERATURE = custom_topic_temp.getValue();
   TOPIC_HUMIDITY = custom_topic_hum.getValue();
 }
 
 void timerInit() {
+  timerConnect.setInterval(500);
+  timerConnect.start();
   //timer.setInterval(sensor.min_delay / 1000);
-  timer.setInterval(DHT_SEND_TIME);
+  timer.setInterval(SEND_TIME);
   timer.start();
 }
 
-String dhtParam() {
+void readConfig() {
+  Serial.print(F("Reading config..."));
+  MQTT_SERVER = getEEPROMData(START_ADDRESS_MQTT_SERVER);
+  MQTT_PORT = getEEPROMData(START_ADDRESS_MQTT_PORT).toInt();
+  MQTT_USER = getEEPROMData(START_ADDRESS_MQTT_USER);
+  MQTT_PASS = getEEPROMData(START_ADDRESS_MQTT_PASS);
+  SEND_TIME =  getEEPROMData(START_ADDRESS_SEND_TIME).toInt();
+  TOPIC_TEMPERATURE = getEEPROMData(START_ADDRESS_TOPIC_TEMPERATURE);
+  TOPIC_HUMIDITY = getEEPROMData(START_ADDRESS_TOPIC_HUMIDITY);
+  Serial.print(F("Readed! "));
+
+  printVars("MQTT_SERVER", MQTT_SERVER);
+  printVars("MQTT_PORT", String(MQTT_PORT));
+  printVars("MQTT_USER", MQTT_USER);
+  printVars("MQTT_PASS", MQTT_PASS);
+  printVars("SEND_TIME", String(SEND_TIME));
+  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
+  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
+  Serial.println();
+}
+
+void saveConfig() {
+  Serial.print(F("Saving config..."));
+  saveDataInEEPROM(START_ADDRESS_MQTT_SERVER, MQTT_SERVER.c_str());
+  saveDataInEEPROM(START_ADDRESS_MQTT_PORT, String(MQTT_PORT).c_str());
+  saveDataInEEPROM(START_ADDRESS_MQTT_USER, MQTT_USER.c_str());
+  saveDataInEEPROM(START_ADDRESS_MQTT_PASS, MQTT_PASS.c_str());
+  saveDataInEEPROM(START_ADDRESS_SEND_TIME, String(SEND_TIME).c_str());
+  saveDataInEEPROM(START_ADDRESS_TOPIC_TEMPERATURE, TOPIC_TEMPERATURE.c_str());
+  saveDataInEEPROM(START_ADDRESS_TOPIC_HUMIDITY, TOPIC_HUMIDITY.c_str());
+  Serial.print(F("Saved! "));
+
+  printVars("MQTT_SERVER", MQTT_SERVER);
+  printVars("MQTT_PORT", String(MQTT_PORT));
+  printVars("MQTT_USER", MQTT_USER);
+  printVars("MQTT_PASS", MQTT_PASS);
+  printVars("SEND_TIME", String(SEND_TIME));
+  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
+  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
+  Serial.println();
+}
+
+void saveConfigFromArgs() {
+  MQTT_SERVER = server.arg("server");
+  MQTT_PORT = server.arg("port").toInt();
+  MQTT_USER = server.arg("user");
+  MQTT_PASS = server.arg("pass");
+  SEND_TIME = server.arg("time").toInt();
+  TOPIC_TEMPERATURE = server.arg("topic_temp");
+  TOPIC_HUMIDITY = server.arg("topic_hum");
+
+  Serial.print(F("Saving config..."));
+  saveDataInEEPROM(START_ADDRESS_MQTT_SERVER, MQTT_SERVER.c_str());
+  saveDataInEEPROM(START_ADDRESS_MQTT_PORT, String(MQTT_PORT).c_str());
+  saveDataInEEPROM(START_ADDRESS_MQTT_USER, MQTT_USER.c_str());
+  saveDataInEEPROM(START_ADDRESS_MQTT_PASS, MQTT_PASS.c_str());
+  saveDataInEEPROM(START_ADDRESS_SEND_TIME, String(SEND_TIME).c_str());
+  saveDataInEEPROM(START_ADDRESS_TOPIC_TEMPERATURE, TOPIC_TEMPERATURE.c_str());
+  saveDataInEEPROM(START_ADDRESS_TOPIC_HUMIDITY, TOPIC_HUMIDITY.c_str());
+  Serial.print(F("Saved! "));
+
+  printVars("MQTT_SERVER", MQTT_SERVER);
+  printVars("MQTT_PORT", String(MQTT_PORT));
+  printVars("MQTT_USER", MQTT_USER);
+  printVars("MQTT_PASS", MQTT_PASS);
+  printVars("SEND_TIME", String(SEND_TIME));
+  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
+  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
+  Serial.println();
+}
+
+void saveConfigCallback() {
+  Serial.println("Should save config");
+  shouldSaveConfig = true;
+}
+
+String getParamsSettings() {
+  String params;
+  params += "<p></p>";
+  params += "<span>MQTT Settings:</span>";
+  params += wifiAddParam("server", "mqtt server", MQTT_SERVER.c_str(), LENGHT_MQTT_SERVER);
+  params += wifiAddParam("port", "mqtt port", String(MQTT_PORT).c_str(), LENGHT_MQTT_PORT);
+  params += wifiAddParam("user", "mqtt user", MQTT_USER.c_str(), LENGHT_MQTT_USER);
+  params += wifiAddParam("pass", "mqtt pass", MQTT_PASS.c_str(), LENGHT_MQTT_PASS);
+  params += wifiAddParam("time", "send time", String(SEND_TIME).c_str(), LENGHT_SEND_TIME);
+  params += "<p></p>";
+  params += "<span>Topiсs:</span>";
+  params += wifiAddParam("topic_temp", "temperature topic", TOPIC_TEMPERATURE.c_str(), LENGHT_TOPIC_TEMPERATURE);
+  params += wifiAddParam("topic_hum", "humidity topic", TOPIC_HUMIDITY.c_str(), LENGHT_TOPIC_HUMIDITY);
+  return params;
+}
+
+String getParamsDHT() {
   dht.temperature().getSensor(&sensor);
   String param = F("<dt>Temperatue</dt>");
   param += F("<dd>Sensor Type: ");
