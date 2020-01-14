@@ -77,7 +77,6 @@ String           TOPIC_TEMPERATURE;
 String           TOPIC_HUMIDITY;
 bool             shouldSaveConfig;              //flag for saving data
 DHT_Unified      dht(DHT_PIN, DHT_TYPE);
-sensor_t         sensor;
 
 
 void setup() {
@@ -125,28 +124,21 @@ void reconnect() {
 }
 
 void sendTemperature() {
-  // Get temperature event and print its value.
   sensors_event_t event;
+  
+  // Get temperature
   dht.temperature().getEvent(&event);
-
-  if (isnan(event.temperature)) {
+  if (isnan(event.temperature))
     Serial.println(F("Error reading temperature!"));
-  }
-  else {
-    //print("Temperature", String(event.temperature), "°C", TOPIC_TEMPERATURE);
+  else
     client.publish(TOPIC_TEMPERATURE, String(event.temperature));
-  }
 
-  // Get humidity event and print its value.
+  // Get humidity
   dht.humidity().getEvent(&event);
-  if (isnan(event.relative_humidity)) {
+  if (isnan(event.relative_humidity))
     Serial.println(F("Error reading humidity!"));
-  }
-  else {
-    //print("Humidity", String(event.relative_humidity), "%", TOPIC_HUMIDITY);
-    //Serial.println(F("------------------------------------"));
+  else
     client.publish(TOPIC_HUMIDITY, String(event.relative_humidity));
-  }
 }
 
 void wifiManagerInit() {
@@ -238,25 +230,7 @@ void saveConfigFromArgs() {
   SEND_TIME = server.arg("time").toInt();
   TOPIC_TEMPERATURE = server.arg("topic_temp");
   TOPIC_HUMIDITY = server.arg("topic_hum");
-
-  Serial.print(F("Saving config..."));
-  saveDataInEEPROM(START_ADDRESS_MQTT_SERVER, MQTT_SERVER.c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_PORT, String(MQTT_PORT).c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_USER, MQTT_USER.c_str());
-  saveDataInEEPROM(START_ADDRESS_MQTT_PASS, MQTT_PASS.c_str());
-  saveDataInEEPROM(START_ADDRESS_SEND_TIME, String(SEND_TIME).c_str());
-  saveDataInEEPROM(START_ADDRESS_TOPIC_TEMPERATURE, TOPIC_TEMPERATURE.c_str());
-  saveDataInEEPROM(START_ADDRESS_TOPIC_HUMIDITY, TOPIC_HUMIDITY.c_str());
-  Serial.print(F("Saved! "));
-
-  printVars("MQTT_SERVER", MQTT_SERVER);
-  printVars("MQTT_PORT", String(MQTT_PORT));
-  printVars("MQTT_USER", MQTT_USER);
-  printVars("MQTT_PASS", MQTT_PASS);
-  printVars("SEND_TIME", String(SEND_TIME));
-  printVars("TOPIC_TEMPERATURE", TOPIC_TEMPERATURE);
-  printVars("TOPIC_HUMIDITY", TOPIC_HUMIDITY);
-  Serial.println();
+  saveConfig();
 }
 
 void saveConfigCallback() {
@@ -281,47 +255,26 @@ String getParamsSettings() {
 }
 
 String getParamsDHT() {
+  String param;
+  sensor_t sensor;
+  
   dht.temperature().getSensor(&sensor);
-  String param = F("<dt>Temperatue</dt>");
-  param += F("<dd>Sensor Type: ");
-  param += sensor.name;
-  param += F("</dd>");
-  param += F("<dd>Driver Ver: ");
-  param += sensor.version;
-  param += F("</dd>");
-  param += F("<dd>Unique ID: ");
-  param += sensor.sensor_id;
-  param += F("</dd>");
-  param += F("<dd>Max Value: ");
-  param += sensor.max_value;
-  param += F("°C</dd>");
-  param += F("<dd>Min Value: ");
-  param += sensor.min_value;
-  param += F("°C</dd>");
-  param += F("<dd>Resolution: ");
-  param += sensor.resolution;
-  param += F("°C</dd>");
+  param += wifiAddNameList("Temperatue");
+  param += wifiAddBodyList(((String) "Sensor Type: " + sensor.name).c_str());
+  param += wifiAddBodyList(((String) "Driver Ver: " + sensor.version).c_str());
+  param += wifiAddBodyList(((String) "Unique ID: " + sensor.sensor_id).c_str());
+  param += wifiAddBodyList(((String) "Max Value:  " + sensor.max_value + "°C").c_str());
+  param += wifiAddBodyList(((String) "Min Value:  " + sensor.min_value + "°C").c_str());
+  param += wifiAddBodyList(((String) "Resolution:  " + sensor.resolution + "°C").c_str());
 
   dht.humidity().getSensor(&sensor);
-  param += F("<dt>Humidity</dt>");
-  param += F("<dd>Sensor Type: ");
-  param += sensor.name;
-  param += F("</dd>");
-  param += F("<dd>Driver Ver: ");
-  param += sensor.version;
-  param += F("</dd>");
-  param += F("<dd>Unique ID: ");
-  param += sensor.sensor_id;
-  param += F("</dd>");
-  param += F("<dd>Max Value: ");
-  param += sensor.max_value;
-  param += F("%</dd>");
-  param += F("<dd>Min Value: ");
-  param += sensor.min_value;
-  param += F("%</dd>");
-  param += F("<dd>Resolution: ");
-  param += sensor.resolution;
-  param += F("%</dd>");
+  param += wifiAddNameList("Humidity");
+  param += wifiAddBodyList(((String) "Sensor Type: " + sensor.name).c_str());
+  param += wifiAddBodyList(((String) "Driver Ver: " + sensor.version).c_str());
+  param += wifiAddBodyList(((String) "Unique ID: " + sensor.sensor_id).c_str());
+  param += wifiAddBodyList(((String) "Max Value:  " + sensor.max_value + "%").c_str());
+  param += wifiAddBodyList(((String) "Min Value:  " + sensor.min_value + "%").c_str());
+  param += wifiAddBodyList(((String) "Resolution:  " + sensor.resolution + "%").c_str());
 
   return param;
 }

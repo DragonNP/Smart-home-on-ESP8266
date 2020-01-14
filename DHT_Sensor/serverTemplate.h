@@ -5,7 +5,8 @@
 #define SERVER_PORTAL_OPTIONS "<br/><form action=\"/info\" method=\"get\"><button class=\"btn-blue\">Информация</button></form><br/><form action=\"/settings\"method=\"get\"><button class=\"btn-blue\">Настройки</button></form><br/><form action=\"/reboot\"method=\"post\"><button class=\"btn-red\">Перезагрузка</button></form><br/><form action=\"/reset\"method=\"post\"><button class=\"btn-red\">Сброс настроек</button></form>"
 #define SERVER_PORTAL_BACK    "<br/><form action=\"/\" method=\"get\"><button class=\"btn-blue\">Назад</button></form>"
 
-#define SERVER_VALUE          "<br/><br/><div class=\"value\"></div>"
+#define SERVER_LIST_NAME      "<dt>{v}</dt>"
+#define SERVER_LIST_BODY      "<dd>{v}</dd>" 
 
 #define SERVER_FORM_START     "<form method='get'action='/save'><br/>"
 #define SERVER_FORM_PARAM     "<br/><input id='{i}'name='{n}'length={l} placeholder='{p}'value='{v}'>"

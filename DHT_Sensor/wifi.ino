@@ -52,6 +52,18 @@ String wifiAddParam(const char *id, const char *placeholder, const char *value, 
   return pitem;
 }
 
+String wifiAddNameList(const char *name) {
+  String pitem = FPSTR(SERVER_LIST_NAME);
+  pitem.replace("{v}", name);
+  return pitem;
+}
+
+String wifiAddBodyList(const char *body) {
+  String pitem = FPSTR(SERVER_LIST_BODY);
+  pitem.replace("{v}", body);
+  return pitem;
+}
+
 void wifiSetSaveConfigCallback(void (*func)(void)) {
   wifiManager.setSaveConfigCallback(func);
 }
