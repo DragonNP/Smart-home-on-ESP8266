@@ -13,15 +13,20 @@ void handleMain(const char *title) {
 }
 
 void handleInfo(String params) {
+  char chipId[10] = "";
+  sprintf(chipId, "%d", (long)ESP.getChipId());
+  char flashChipId[10] = "";
+  sprintf(flashChipId, "%d", (long)ESP.getFlashChipId());
+  
   String page = FPSTR(SERVER_HEAD);
   page.replace("{v}", "Информация");
   page += FPSTR(SERVER_STYLE);
   page += FPSTR(SERVER_HEAD_END);
   page += F("<dl>");
   page += wifiAddNameList("Chip ID");
-  page += wifiAddBodyList(String(ESP.getChipId()).c_str());
+  page += wifiAddBodyList((const char*)chipId);
   page += wifiAddNameList("Flash Chip ID");
-  page += wifiAddBodyList(String(ESP.getFlashChipId()).c_str());
+  page += wifiAddBodyList((const char*)flashChipId);
   page += wifiAddNameList("IDE Flash Size");
   page += wifiAddBodyList(ESP.getFlashChipSize() + " bytes");
   page += wifiAddNameList("Real Flash Size");

@@ -5,6 +5,13 @@ WiFiManager wifiManager;
 void wifiAutoConnect(const char *ssid = "ESP " + ESP.getChipId(), const char *passwd = "");
 void wifiStartServer(void (*saveFunc)(void), void (*resetFunc)(void), String title = "ESP " + ESP.getChipId(), String paramsSettings = "", String paramInfo = "");
 
+void handleMain(const char *title);
+void handleInfo(String params);
+void handleSettings(String params);
+void handleReboot();
+void handleReset(void (*resetFunc)(void));
+void handleSaved();
+
 void wifiAutoConnect(const char *ssid, const char *passwd) {
   wifiManager.autoConnect(ssid, passwd);
 }
