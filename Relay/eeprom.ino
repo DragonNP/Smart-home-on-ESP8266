@@ -1,6 +1,5 @@
 void beginEEPROM(int length) {
   EEPROM.begin(length);
-  delay(10);
 }
 
 void clearEEPROM() {
