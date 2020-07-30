@@ -1,4 +1,4 @@
-![PROJECT_PHOTO](https://github.com/DragonNP/Smart-home-on-ESP8266/blob/master/BME28/schemes/scheme.png)
+![PROJECT_PHOTO](https://github.com/DragonNP/Smart-home-on-ESP8266/blob/master/BME280/schemes/scheme.png)
 # BME280 for smart home
 * [Project description](#chapter-0)
 * [Project folder](#chapter-1)
