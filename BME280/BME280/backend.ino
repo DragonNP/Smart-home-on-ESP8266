@@ -6,7 +6,6 @@ void useCSS() {
   
   DEBUG_LN("Use static file: bootstrap.min.css");
   HttpServer.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-    Serial.print(isAP);
     if (isAP) {
       request->send(SPIFFS, "/bootstrap.min.css");
     } else {

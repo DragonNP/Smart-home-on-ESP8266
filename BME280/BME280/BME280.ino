@@ -1,29 +1,27 @@
-// ============== LIBS ==============
-// WiFi
-#include <ESP8266WiFi.h>
-// EEPROM
-#include <EEPROM.h>
-// MQTT
-#include <GyverTimer.h>
-#include <PubSubClient.h>
-// BME280
-#include <Wire.h>
-#include <Adafruit_BME280.h>
-#include <Adafruit_Sensor.h>
-// WEB
-#include <ESPAsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <Updater.h>
-// File System
-#include <FS.h>
-// Word Time
-#include <ESP8266mDNS.h>
-#include <NTPClient.h>
-// ============== LIBS ==============
+/*
+  Sketch for the project "BME280"
+  The source code on GitHub: https://github.com/DragonNP/Smart-home-on-ESP8266/tree/master/BME280
+  Author: DragonNP, 2020
+  https://github.com/DragonNP/
+
+  Libs link:
+  ------------------------------------------------------
+  ESP8266WiFi       -    https://github.com/esp8266/Arduino
+  GyverTimer        -    https://github.com/AlexGyver/GyverLibs/tree/master/GyverTimer
+  PubSubClient      -    https://github.com/ianscrivener/pubsubclient
+  Wire              -    https://github.com/esp8266/Arduino/tree/master/libraries/Wire
+  Adafruit_BME280   -    https://github.com/adafruit/Adafruit_BME280_Library
+  Adafruit_Sensor   -    https://github.com/adafruit/Adafruit_Sensor
+  ESPAsyncTCP       -    https://github.com/me-no-dev/ESPAsyncTCP
+  ESPAsyncWebServer -    https://github.com/me-no-dev/ESPAsyncWebServer
+  NTPClient         -    https://github.com/arduino-libraries/NTPClient
+  ------------------------------------------------------
+*/
 
 
 // ============ SETTINGS ============
 #define DEBUG_ENABLE
+#define TIMEZONE     +3
 
 #ifdef DEBUG_ENABLE
 #define DEBUG_LN(x) Serial.println(x)
@@ -105,8 +103,34 @@
 #define EEPROM_LENGTH                     START_ADDRESS_TIMEOUT_PUBLISH + LENGHT_MQTT_TIMEOUT_PUBLISH
 // ============ SETTINGS ============
 
+
+// ============== LIBS ==============
+// WiFi
+#include <ESP8266WiFi.h>
+// EEPROM
+#include <EEPROM.h>
+// MQTT
+#include <GyverTimer.h>
+#include <PubSubClient.h>
+// BME280
+#include <Wire.h>
+#include <Adafruit_BME280.h>
+#include <Adafruit_Sensor.h>
+// WEB
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <Updater.h>
+// File System
+#include <FS.h>
+// Word Time
+#include <ESP8266mDNS.h>
+#include <NTPClient.h>
+// ============== LIBS ==============
+
+
 // VARIABLES
 #include "a0_data.h"
+
 
 void setup() {
   Serial.begin(SPEED_SERIAL);
@@ -114,7 +138,7 @@ void setup() {
 
   // Time
   timeClient.begin();
-  timeClient.setTimeOffset(10800);
+  timeClient.setTimeOffset(TIMEZONE*3600);
 
   // Time reading values
   DEBUG("Timer publish, set interval:60000, start");
@@ -137,10 +161,10 @@ void loop() {
   timeClient.update();
 
   if (timerReader.isReady()) {
-    if (!bme.begin(0x76)) {
+    if (!bme.begin(0x76))
       Serial.println("Could not find a valid BME280 sensor, check wiring!"); // Печать, об ошибки инициализации.
-    }
-    readValues();
+    else
+      readValues();
   }
 
   if (!isAP && useMQTT) mqttLoop();

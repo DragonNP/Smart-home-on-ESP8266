@@ -44,11 +44,11 @@ void reconnect() {
   bool result = false;
   if (useMQTTAuth) {
     result = client.connect(MQTT::Connect(ap_ssid).set_auth(mqtt_user, mqtt_pass));
-    DEBUG_LN("MQTT connect with auth ");
+    DEBUG("MQTT connect with auth ");
   }
   else {
     result = client.connect(ap_ssid);
-    DEBUG_LN("MQTT connect without auth ");
+    DEBUG("MQTT connect without auth ");
   }
 
   if (result) {
